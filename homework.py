@@ -4,6 +4,11 @@ import time
 from dotenv import load_dotenv
 import requests
 import telegram 
+from typing import Dict, List
+
+from exceptions import (
+    HomeworkApiError 
+)
 
 load_dotenv()
 
@@ -28,13 +33,20 @@ def send_message(bot, message):
     ...
 
 
-def get_api_answer(current_timestamp):
+def get_api_answer(
+    current_timestamp: int) -> List[Dict[str, str]]:
+    """Делает запрос к API яндекса и возвращает ответ."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     headers = {'Authorization': PRACTICUM_TOKEN}
-    homework_statuses = requests.get(URL, headers=headers, params=params)
-    # print(homework_statuses.json())
-    return homework_statuses.json()
+    try:
+        homework_statuses = requests.get(URL, headers=headers, params=params)
+        # print(homework_statuses.json())
+        return homework_statuses.json()
+    except Exception as exc:
+        raise HomeworkApiError(f'Ошибка подключения к API яндекса: {exc}') from exc
+    else:
+        return response
 
 
 def check_response(response):
@@ -62,9 +74,6 @@ def parse_status(homework):
 
 def check_tokens() -> bool:
     """Проверяет наличие всех переменных окружения"""
-    # if "PRACTICUM_TOKEN" in os.environ:
-    #     return True
-    # return False    
     return all((
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,

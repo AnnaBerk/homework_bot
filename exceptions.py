@@ -1,0 +1,2 @@
+class HomeworkApiError(Exception):
+    pass
