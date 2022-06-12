@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from http import HTTPStatus
 import os
+import sys
 import time
 from dotenv import load_dotenv
 import requests
@@ -19,7 +20,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 600
+RETRY_TIME = 10
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 URL = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -29,6 +30,8 @@ HOMEWORK_STATUSES = {
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
+
+# MESSAGE = 'homework_name: {homework_name}, verdict: {verdict}'
 
 def send_message(bot: Bot, message: str) -> None:
     """Отправляет сообщение в телеграм."""
@@ -75,8 +78,6 @@ def check_response(
     print(homework)
     
 
-
-
 def parse_status(homework):
     homework_name = homework['homework_name']
     homework_status = homework['status']
@@ -104,31 +105,47 @@ def check_tokens() -> bool:
 def main():
     """Основная логика работы бота."""
   
-    if check_tokens():
-        print('трумс')
+    if not check_tokens():
+        error_message = (
+            f'Отсутствуют обязательные переменные окружения: '
+            'PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID,'
+            'Программа принудительно остановлена'
+        )
+        sys.exit(error_message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     thirty_days_ago = int((datetime.now() - timedelta(days=30)).timestamp())
-    response = get_api_answer(thirty_days_ago)
-    homeworks = check_response(response)
-    answer = parse_status(homeworks)
-    send_message(bot, answer)
+    # response = get_api_answer(thirty_days_ago)
+    # homeworks = check_response(response)
+    # answer = parse_status(homeworks)
+    # send_message(bot, answer)
+    
+    current_report = None
+    prev_report = current_report
   
     while True:
         try:
-            response = ...
-
-            ...
+            response = get_api_answer(thirty_days_ago)
+            homeworks = check_response(response)
+            answer = parse_status(homeworks)
+            current_report = answer
+            
 
             current_timestamp = ...
             time.sleep(RETRY_TIME)
 
         except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            ...
-            time.sleep(RETRY_TIME)
-        else:
-            ...
+            error_message = f'Сбой в работе программы: {error}'
+            current_report = error_message
+        try:
+            if current_report != prev_report:
+                send_message(bot, current_report)
+                prev_report = current_report
+        except TelegramError as exc:
+            error_message = f'Сбой в работе программы: {exc}'
+            
+
+        time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
