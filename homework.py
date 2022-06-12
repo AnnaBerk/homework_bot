@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
+from http import HTTPStatus
 import os
 import time
 from dotenv import load_dotenv
 import requests
 import telegram 
-from typing import Dict, List
+from telegram import Bot
+from typing import Dict, List, Union
 
 from exceptions import (
-    HomeworkApiError 
+    HomeworkApiError, APIStatusCodeError
 )
 
 load_dotenv()
@@ -28,13 +30,20 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+# bot = Bot(token=TELEGRAM_TOKEN)
 
-def send_message(bot, message):
-    ...
+def send_message(bot: Bot, message: str) -> None:
+    """Отправляет сообщение в телеграм."""
+    data = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message,
+    }
+    bot.send_message(**data)
+    
 
 
 def get_api_answer(
-    current_timestamp: int) -> List[Dict[str, str]]:
+    current_timestamp: int) -> Dict[str, List[Dict[str, Union[int, float, str]]]]:
     """Делает запрос к API яндекса и возвращает ответ."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
@@ -49,10 +58,20 @@ def get_api_answer(
         return response
 
 
-def check_response(response):
-    if response:
-        print(response['homeworks'])
-        return response['homeworks']
+def check_response(
+    response: Dict[str, List[Dict[str, Union[int, float, str]]]]) -> List[str]:
+    """Проверяет наличие домашки."""
+    if not isinstance(response, Dict):
+        raise TypeError(
+            f'Ответ от API не является словарем: response = {response}'
+        )
+    try:     
+        homework = response['homeworks'][0]
+        return homework
+    except Exception as exc:
+        raise IndexError(f'Нет такого индекса в списке: {exc}') from exc #мб надо другую ошибку
+    print(homework)
+    
 
 
 
@@ -90,7 +109,8 @@ def main():
     thirty_days_ago = int((datetime.now() - timedelta(days=30)).timestamp())
     response = get_api_answer(thirty_days_ago)
     homeworks = check_response(response)
-    parse_status(homeworks[0])
+    answer = parse_status(homeworks)
+    send_message(bot, answer)
   
     while True:
         try:
