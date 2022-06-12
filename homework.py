@@ -5,7 +5,7 @@ import time
 from dotenv import load_dotenv
 import requests
 import telegram 
-from telegram import Bot
+from telegram import Bot, TelegramError
 from typing import Dict, List, Union
 
 from exceptions import (
@@ -30,16 +30,18 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-# bot = Bot(token=TELEGRAM_TOKEN)
-
 def send_message(bot: Bot, message: str) -> None:
     """Отправляет сообщение в телеграм."""
     data = {
         'chat_id': TELEGRAM_CHAT_ID,
         'text': message,
     }
-    bot.send_message(**data)
-    
+    try:
+        bot.send_message(**data)
+    except Exception as exc:
+        raise TelegramError(
+            f'Ошибка отправки сообщения в телеграм: {exc}'
+        ) from exc
 
 
 def get_api_answer(
