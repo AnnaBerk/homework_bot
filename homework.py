@@ -10,7 +10,7 @@ from telegram import Bot, TelegramError
 from typing import Dict, List, Union
 
 from exceptions import (
-    HomeworkApiError, APIStatusCodeError
+    HomeworkApiError
 )
 
 load_dotenv()
@@ -71,15 +71,28 @@ def check_response(
         )
     try:     
         homework = response['homeworks'][0]
-        return homework
+        
     except Exception as exc:
-        raise IndexError(f'Нет такого индекса в списке: {exc}') from exc #мб надо другую ошибку
-    print(homework)
-    
+        raise IndexError(f'Нет такого индекса в списке: {exc}') from exc 
+    return homework
+  
 
 def parse_status(homework: str) -> str:
-    homework_name = homework['homework_name']
-    homework_status = homework['status']
+    try:
+        homework_name = homework['homework_name']
+    except Exception:    
+        raise HomeworkApiError(
+                'В ответе API отсутствуют необходимый ключ "homework_name", '
+                f'homework = {homework}'
+            )   
+    try:
+        homework_status = homework['status']
+    except Exception:    
+        raise HomeworkApiError(
+                'В ответе API отсутствуют необходимый ключ "homework_status", '
+                f'homework = {homework}'
+            )      
+
 
     for status, answer in HOMEWORK_STATUSES.items():
         if homework_status==status:
@@ -111,10 +124,7 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     thirty_days_ago = int((datetime.now() - timedelta(days=30)).timestamp())
-    # response = get_api_answer(thirty_days_ago)
-    # homeworks = check_response(response)
-    # answer = parse_status(homeworks)
-    # send_message(bot, answer)
+
     
     current_report = None
     prev_report = current_report
