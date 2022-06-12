@@ -55,7 +55,6 @@ def get_api_answer(
     headers = {'Authorization': PRACTICUM_TOKEN}
     try:
         homework_statuses = requests.get(URL, headers=headers, params=params)
-        # print(homework_statuses.json())
         return homework_statuses.json()
     except Exception as exc:
         raise HomeworkApiError(f'Ошибка подключения к API яндекса: {exc}') from exc
@@ -78,7 +77,7 @@ def check_response(
     print(homework)
     
 
-def parse_status(homework):
+def parse_status(homework: str) -> str:
     homework_name = homework['homework_name']
     homework_status = homework['status']
 
@@ -87,9 +86,6 @@ def parse_status(homework):
             verdict = answer
         
     print(verdict)
-    # verdict = ...
-
-    ...
 
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
