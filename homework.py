@@ -102,8 +102,6 @@ def parse_status(homework: str) -> str:
     for status, answer in HOMEWORK_STATUSES.items():
         if homework_status==status:
             verdict = answer
-        
-    print(verdict)
 
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -125,6 +123,7 @@ def main():
             'PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID,'
             'Программа принудительно остановлена'
         )
+        logging.critical(error_message)
         sys.exit(error_message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
@@ -152,8 +151,12 @@ def main():
             if current_report != prev_report:
                 send_message(bot, current_report)
                 prev_report = current_report
+                logging.debug(
+                    'Нет обновлений по статутсу домашки'
+                )
         except TelegramError as exc:
             error_message = f'Сбой в работе программы: {exc}'
+            logging.exception(error_message)
             
 
         time.sleep(RETRY_TIME)
