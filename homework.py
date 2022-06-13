@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from http import HTTPStatus
+import logging
 import os
 import sys
 import time
@@ -31,7 +31,6 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-# MESSAGE = 'homework_name: {homework_name}, verdict: {verdict}'
 
 def send_message(bot: Bot, message: str) -> None:
     """Отправляет сообщение в телеграм."""
@@ -40,11 +39,13 @@ def send_message(bot: Bot, message: str) -> None:
         'text': message,
     }
     try:
+        logging.info('Отправляем сообщение в телеграм: %s', message)
         bot.send_message(**data)
-    except Exception as exc:
-        raise TelegramError(
-            f'Ошибка отправки сообщения в телеграм: {exc}'
-        ) from exc
+    except TelegramError as exc:
+        error_message = f'Ошибка отправки сообщения в телеграм: : {exc}'
+        logging.exception(error_message)
+    else:
+        logging.info('Сообщение в телеграм успешно отправлено')    
 
 
 def get_api_answer(
@@ -125,7 +126,7 @@ def main():
     current_timestamp = int(time.time())
     thirty_days_ago = int((datetime.now() - timedelta(days=30)).timestamp())
 
-    
+        
     current_report = None
     prev_report = current_report
   
@@ -152,7 +153,17 @@ def main():
             
 
         time.sleep(RETRY_TIME)
-
+      
 
 if __name__ == '__main__':
+    log_format = (
+        '%(asctime)s [%(levelname)s] - '
+        '(%(filename)s).%(funcName)s:%(lineno)d - %(message)s'
+    )
+    log_stream = sys.stdout
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=log_format,
+        handlers=[logging.StreamHandler(log_stream)]
+    )
     main()
