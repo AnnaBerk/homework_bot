@@ -139,7 +139,10 @@ def main():
             homeworks = check_response(response)
             answer = parse_status(homeworks)
             current_report = answer
-            
+            if current_report == prev_report:
+                logging.debug(
+                    'Нет обновлений по статутсу домашки'
+                )
 
             current_timestamp = ...
             time.sleep(RETRY_TIME)
@@ -150,10 +153,7 @@ def main():
         try:
             if current_report != prev_report:
                 send_message(bot, current_report)
-                prev_report = current_report
-                logging.debug(
-                    'Нет обновлений по статутсу домашки'
-                )
+                prev_report = current_report            
         except TelegramError as exc:
             error_message = f'Сбой в работе программы: {exc}'
             logging.exception(error_message)
