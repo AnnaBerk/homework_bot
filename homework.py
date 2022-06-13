@@ -69,14 +69,16 @@ def check_response(
     response: Dict[str, List[Dict[str, Union[int, float, str]]]]) -> List[str]:
     """Проверяет наличие домашки."""
     if not isinstance(response, Dict):
-        raise TypeError(
-            f'Ответ от API не является словарем: response = {response}'
-        )
+        error_message = f'Ответ от API не является словарем: response = {response}'
+        logging.exception(error_message)
+        raise TypeError(error_message)
     try:     
         homework = response['homeworks'][0]
         
     except Exception as exc:
-        raise IndexError(f'Нет такого индекса в списке: {exc}') from exc 
+        error_message = f'Нет такого индекса в списке: {exc}'
+        logging.exception(error_message)
+        raise IndexError(error_message) from exc 
     return homework
   
 
