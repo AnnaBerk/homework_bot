@@ -1,11 +1,10 @@
-from datetime import datetime, timedelta
 import logging
 import os
 import sys
 import time
 from dotenv import load_dotenv
 import requests
-import telegram 
+import telegram
 from telegram import Bot, TelegramError
 from typing import Dict, List, Union
 
@@ -45,11 +44,12 @@ def send_message(bot: Bot, message: str) -> None:
         error_message = f'Ошибка отправки сообщения в телеграм: : {exc}'
         logging.exception(error_message)
     else:
-        logging.info('Сообщение в телеграм успешно отправлено')    
+        logging.info('Сообщение в телеграм успешно отправлено')
 
 
 def get_api_answer(
-    current_timestamp: int) -> Dict[str, List[Dict[str, Union[int, float, str]]]]:
+    current_timestamp: int
+) -> Dict[str, List[Dict[str, Union[int, float, str]]]]:
     """Делает запрос к API яндекса и возвращает ответ."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
@@ -66,49 +66,46 @@ def get_api_answer(
 
 
 def check_response(
-    response: Dict[str, List[Dict[str, Union[int, float, str]]]]) -> List[str]:
+    response: Dict[str, List[Dict[str, Union[int, float, str]]]]
+) -> List[str]:
     """Проверяет наличие домашки."""
     if not isinstance(response, Dict):
-        error_message = f'Ответ от API не является словарем: response = {response}'
+        error_message = 'Ответ от API не является словарем:'
+        f'response = {response}'
         logging.exception(error_message)
         raise TypeError(error_message)
-    # try:     
     homeworks = response['homeworks']
     if len(homeworks) == 0:
-        
         return None
-        # raise IndexError(error_message) from exc
-    # print(homeworks)    
-    # except Exception as exc:
-    #     error_message = f'Нет такого индекса в списке: {exc}'
-    #     logging.exception(error_message)
-    #     raise IndexError(error_message) from exc 
     return homeworks[0]
-  
+
 
 def parse_status(homework: str) -> str:
+    """Проверяет статус домашки."""
     try:
         homework_name = homework['homework_name']
-    except Exception: 
-        error_message = 'В ответе API отсутствуют необходимый ключ "homework_name", '
+    except Exception:
+        error_message = 'В ответе API отсутствует'
+        'необходимый ключ "homework_name", '
         f'homework = {homework}'
-        logging.exception(error_message)   
-        raise HomeworkApiError(error_message) 
+        logging.exception(error_message)
+        raise HomeworkApiError(error_message)
     try:
         homework_status = homework['status']
-    except Exception: 
-        error_message = 'В ответе API отсутствуют необходимый ключ "homework_status", '
+    except Exception:
+        error_message = 'В ответе API отсутствует'
+        'необходимый ключ "homework_status", '
         f'homework = {homework}'
-        logging.exception(error_message)   
-        raise HomeworkApiError(error_message) 
+        logging.exception(error_message)
+        raise HomeworkApiError(error_message)
 
     verdict = None
     for status, answer in HOMEWORK_STATUSES.items():
-        if homework_status==status:
+        if homework_status == status:
             verdict = answer
-    
+
     if verdict is None:
-        logging.error('Недокументированный статус домашней работы')  
+        logging.error('Недокументированный статус домашней работы')
 
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -121,12 +118,12 @@ def check_tokens() -> bool:
         TELEGRAM_CHAT_ID,
     ))
 
+
 def main():
     """Основная логика работы бота."""
-  
     if not check_tokens():
         error_message = (
-            f'Отсутствуют обязательные переменные окружения: '
+            'Отсутствуют обязательные переменные окружения: '
             'PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID,'
             'Программа принудительно остановлена'
         )
@@ -134,10 +131,10 @@ def main():
         sys.exit(error_message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-        
+
     current_report = None
     prev_report = current_report
-  
+
     while True:
         try:
             response = get_api_answer(current_timestamp)
@@ -145,32 +142,25 @@ def main():
             if homeworks is None:
                 logging.debug('Нет новых домашек')
                 time.sleep(RETRY_TIME)
-                continue         
+                continue
             answer = parse_status(homeworks)
             current_report = answer
             if current_report == prev_report:
                 logging.debug(
                     'Нет обновлений по статутсу домашки'
                 )
-       
-
-            # current_timestamp = ...
-            # time.sleep(RETRY_TIME)
-
         except Exception as error:
             error_message = f'Сбой в работе программы: {error}'
             current_report = error_message
         try:
             if current_report != prev_report:
                 send_message(bot, current_report)
-                prev_report = current_report            
+                prev_report = current_report
         except TelegramError as exc:
             error_message = f'Сбой в работе программы: {exc}'
             logging.exception(error_message)
-            
-
         time.sleep(RETRY_TIME)
-      
+
 
 if __name__ == '__main__':
     log_format = (

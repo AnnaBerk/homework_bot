@@ -1,3 +1,2 @@
 class HomeworkApiError(Exception):
     pass
-
