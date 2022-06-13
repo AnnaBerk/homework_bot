@@ -72,14 +72,18 @@ def check_response(
         error_message = f'Ответ от API не является словарем: response = {response}'
         logging.exception(error_message)
         raise TypeError(error_message)
-    try:     
-        homework = response['homeworks'][0]
+    # try:     
+    homeworks = response['homeworks']
+    if len(homeworks) == 0:
         
-    except Exception as exc:
-        error_message = f'Нет такого индекса в списке: {exc}'
-        logging.exception(error_message)
-        raise IndexError(error_message) from exc 
-    return homework
+        return None
+        # raise IndexError(error_message) from exc
+    # print(homeworks)    
+    # except Exception as exc:
+    #     error_message = f'Нет такого индекса в списке: {exc}'
+    #     logging.exception(error_message)
+    #     raise IndexError(error_message) from exc 
+    return homeworks[0]
   
 
 def parse_status(homework: str) -> str:
@@ -130,25 +134,28 @@ def main():
         sys.exit(error_message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    thirty_days_ago = int((datetime.now() - timedelta(days=30)).timestamp())
-
         
     current_report = None
     prev_report = current_report
   
     while True:
         try:
-            response = get_api_answer(thirty_days_ago)
+            response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
+            if homeworks is None:
+                logging.debug('Нет новых домашек')
+                time.sleep(RETRY_TIME)
+                continue         
             answer = parse_status(homeworks)
             current_report = answer
             if current_report == prev_report:
                 logging.debug(
                     'Нет обновлений по статутсу домашки'
                 )
+       
 
-            current_timestamp = ...
-            time.sleep(RETRY_TIME)
+            # current_timestamp = ...
+            # time.sleep(RETRY_TIME)
 
         except Exception as error:
             error_message = f'Сбой в работе программы: {error}'
