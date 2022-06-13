@@ -111,7 +111,7 @@ def parse_status(homework: str) -> str:
 
 
 def check_tokens() -> bool:
-    """Проверяет наличие всех переменных окружения"""
+    """Проверяет наличие всех переменных окружения."""
     return all((
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
