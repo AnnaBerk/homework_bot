@@ -53,7 +53,7 @@ def get_api_answer(
     """Делает запрос к API яндекса и возвращает ответ."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    headers = {'Authorization': PRACTICUM_TOKEN}
+    headers = HEADERS
     try:
         logging.info('Запрашивает информацию о домашках')
         homework_statuses = requests.get(URL, headers=headers, params=params)
