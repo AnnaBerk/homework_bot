@@ -26,8 +26,8 @@ HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 URL = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 
 HOMEWORK_STATUSES = {
-    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
+    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
@@ -98,10 +98,13 @@ def parse_status(homework: str) -> str:
         logging.exception(error_message)   
         raise HomeworkApiError(error_message) 
 
-
+    verdict = None
     for status, answer in HOMEWORK_STATUSES.items():
         if homework_status==status:
             verdict = answer
+    
+    if verdict is None:
+        logging.error('Недокументированный статус домашней работы')  
 
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
