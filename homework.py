@@ -55,12 +55,14 @@ def get_api_answer(
     params = {'from_date': timestamp}
     headers = {'Authorization': PRACTICUM_TOKEN}
     try:
+        logging.info('Запрашивает информацию о домашках')
         homework_statuses = requests.get(URL, headers=headers, params=params)
-        return homework_statuses.json()
     except Exception as exc:
-        raise HomeworkApiError(f'Ошибка подключения к API яндекса: {exc}') from exc
+        error_message = f'Ошибка подключения к API яндекса: {exc}'
+        logging.exception(error_message)
+        raise HomeworkApiError(error_message) from exc
     else:
-        return response
+        return homework_statuses.json()
 
 
 def check_response(
