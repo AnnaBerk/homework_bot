@@ -85,18 +85,18 @@ def check_response(
 def parse_status(homework: str) -> str:
     try:
         homework_name = homework['homework_name']
-    except Exception:    
-        raise HomeworkApiError(
-                'В ответе API отсутствуют необходимый ключ "homework_name", '
-                f'homework = {homework}'
-            )   
+    except Exception: 
+        error_message = 'В ответе API отсутствуют необходимый ключ "homework_name", '
+        f'homework = {homework}'
+        logging.exception(error_message)   
+        raise HomeworkApiError(error_message) 
     try:
         homework_status = homework['status']
-    except Exception:    
-        raise HomeworkApiError(
-                'В ответе API отсутствуют необходимый ключ "homework_status", '
-                f'homework = {homework}'
-            )      
+    except Exception: 
+        error_message = 'В ответе API отсутствуют необходимый ключ "homework_status", '
+        f'homework = {homework}'
+        logging.exception(error_message)   
+        raise HomeworkApiError(error_message) 
 
 
     for status, answer in HOMEWORK_STATUSES.items():
