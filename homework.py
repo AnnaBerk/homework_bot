@@ -12,10 +12,7 @@ from typing import Dict, List, Union
 from exceptions import (
     HomeworkApiError, APIStatusCodeError
 )
-from datetime import datetime, timedelta
 
-
-thirty_days_ago = int((datetime.now() - timedelta(days=30)).timestamp())
 
 load_dotenv()
 
@@ -24,7 +21,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 10
+RETRY_TIME = 300
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'{PRACTICUM_TOKEN}'}
 URL = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -79,45 +76,48 @@ def get_api_answer(
 
 def check_response(
     response: Dict[str, List[Dict[str, Union[int, float, str]]]]
-) -> List[str]:
+) -> Dict[str, Union[int, float]]:
     """Проверяет наличие домашки."""
-    if not isinstance(response, Dict):
-        error_message = 'Ответ от API не является словарем:'
-        f'response = {response}'
+    if not isinstance(response, dict):
+        error_message = (
+            'Ответ от API не является словарем:'
+            f'response = {response}')
         logging.exception(error_message)
         raise TypeError(error_message)
-    homeworks = response['homeworks']
-    if len(homeworks) == 0:
-        return None
-    print(homeworks[0])
-    return homeworks[0]
+
+    if not response:
+        raise TypeError('В ответе пришёл пустой список')
+
+    if not all(['current_date' in response, 'homeworks' in response]):
+        raise KeyError('В ответе API нет нужных ключей')
+    if not isinstance(response['homeworks'], list):
+        raise TypeError('Homeworks не список')
+    return response['homeworks'][0]
 
 
-def parse_status(homework: list) -> str:
+def parse_status(homework: Dict[str, Union[int, float, str]]) -> str:
     """Проверяет статус домашки."""
     try:
         homework_name = homework['homework_name']
-        
     except Exception:
-        error_message = 'В ответе API отсутствует ключ "homework_name",'
-        f'homework = {homework}'
+        error_message = 'В ответе API отсутствуют нужные ключи '
+
         logging.exception(error_message)
-        raise HomeworkApiError(error_message)
+        raise KeyError(error_message)
     try:
         homework_status = homework['status']
     except Exception:
-        error_message = 'В ответе API отсутствует ключ "homework_status"'
-        f'homework = {homework}'
+        error_message = 'В ответе API отсутствуют нужные ключи '
+
         logging.exception(error_message)
-        raise HomeworkApiError(error_message)
+        raise KeyError(error_message)
+    try:
+        verdict = HOMEWORK_STATUSES[homework_status]
+    except Exception:
+        error_message = 'Недокументированный статус домашней работы'
 
-    verdict = None
-    for status, answer in HOMEWORK_STATUSES.items():
-        if homework_status == status:
-            verdict = answer
-
-    if verdict is None:
-        logging.error('Недокументированный статус домашней работы')
+        logging.exception(error_message)
+        raise KeyError(error_message)
 
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -133,7 +133,6 @@ def check_tokens() -> bool:
 
 def main():
     """Основная логика работы бота."""
-    print(HEADERS)
     if not check_tokens():
         error_message = (
             'Отсутствуют обязательные переменные окружения: '
@@ -150,7 +149,7 @@ def main():
 
     while True:
         try:
-            response = get_api_answer(thirty_days_ago)
+            response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
             if homeworks is None:
                 logging.debug('Нет новых домашек')
