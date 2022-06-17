@@ -54,11 +54,14 @@ def get_api_answer(
 ) -> Dict[str, List[Dict[str, Union[int, float, str]]]]:
     """Делает запрос к API яндекса и возвращает ответ."""
     timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp}
-    headers = HEADERS
+    request_params = {
+        'url': URL,
+        'headers': HEADERS,
+        'params': {'from_date': timestamp},
+    }
     try:
         logging.info('Запрашивает информацию о домашках')
-        homework_statuses = requests.get(URL, headers=headers, params=params)
+        homework_statuses = requests.get(**request_params)
         if homework_statuses.status_code != HTTPStatus.OK:
             raise APIStatusCodeError(
                 'Неверный ответ сервера: '
