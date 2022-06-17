@@ -4,3 +4,12 @@ class HomeworkApiError(Exception):
 
 class APIStatusCodeError(Exception):
     pass
+
+
+class EndPointError(Exception):
+    pass
+
+
+class StatusTypeError(Exception):
+    pass
+
